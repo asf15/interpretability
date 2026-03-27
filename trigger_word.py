@@ -6,40 +6,33 @@ tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name, attn_implementation="eager")
 model.eval()
 
-# Each entry is (label, prompt_with_trigger, prompt_without_trigger, trigger_word, neutral_word)
+# Each entry is (label, prompt_with_trigger, prompt_without_trigger, trigger_word, neutral_word, watch_words)
 prompt_pairs = [
-    # (
-    #     "No dog context",
-    #     "Do you want dinner? She wagged her tail and",
-    #     "Do you want nothing? She wagged her tail and",
-    #     "dinner",
-    #     "nothing",
-    # ),
     (
-        "With dog context",
-        "The dog heard the word dinner. She wagged her tail and",
-        "The dog heard the word nothing. She wagged her tail and",
+        "felt: dinner vs nothing",
+        "The dog heard 'dinner' and immediately felt",
+        "The dog heard 'nothing' and immediately felt",
         "dinner",
         "nothing",
+        [" excited", " happy", " hungry", " anxious", " confused", " tired"],
     ),
     (
-        "With dog context and a phrase",
-        "The nearly asleep dog on the floor heard the phrase 'do you want dinner' and then",
-        "The nearly asleep dog on the floor heard the phrase 'do you want to watch Jeopardy' and then",
+        "meant: dinner vs nothing",
+        "The dog recognized 'dinner' which meant",
+        "The dog recognized 'nothing' which meant",
         "dinner",
-        "Jeopardy"
+        "nothing",
+        [" food", " eating", " time", " meal", " play", " outside"],
     ),
     (
-        "With dog context and a phrase",
-        "The nearly asleep dog on the floor heard the phrase 'do you want dinner' and then the dog",
-        "The nearly asleep dog on the floor heard the phrase 'do you want to watch Jeopardy' and then the dog",
+        "time to: dinner vs nothing",
+        "When someone said 'dinner', the dog knew it was time to",
+        "When someone said 'nothing', the dog knew it was time to",
         "dinner",
-        "Jeopardy"
+        "nothing",
+        [" eat", " run", " go", " jump", " sleep", " wait"],
     ),
 ]
-
-# Words to check for influence — does the trigger make these more/less likely?
-watch_words = [" food", " eat", " hungry", " excited", " jumped", " ran"]
 
 
 def get_outputs(prompt):
@@ -69,7 +62,7 @@ def attention_to_token(attentions, tokens, target):
     return sum(weights) / len(weights)
 
 
-def run_pair(label, prompt_with, prompt_without, trigger, neutral):
+def run_pair(label, prompt_with, prompt_without, trigger, neutral, watch_words):
     tokens_with,    probs_with,    attentions_with    = get_outputs(prompt_with)
     tokens_without, probs_without, attentions_without = get_outputs(prompt_without)
 
