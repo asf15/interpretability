@@ -41,7 +41,7 @@ def get_outputs(prompt):
     with torch.no_grad():
         outputs = model(input_ids, output_attentions=True)
     probs = torch.softmax(outputs.logits[0, -1, :], dim=-1)
-    return tokens, probs, outputs.attentions
+    return tokens, probs, outputs.attentions, input_ids
 
 
 def top_k(probs, k=8):
@@ -49,22 +49,29 @@ def top_k(probs, k=8):
     return [(tokenizer.decode(i), p.item()) for i, p in zip(top_ids, top_probs)]
 
 
-def attention_to_token(attentions, tokens, target):
-    """Average attention weight placed on target token across all layers and heads."""
-    positions = [i for i, t in enumerate(tokens) if t.strip().lower() == target.strip().lower()]
-    if not positions:
-        return None
-    pos = positions[-1]
-    weights = []
-    for layer_attn in attentions:
-        last_token_attn = layer_attn[0, :, -1, pos]  # (n_heads,)
-        weights.append(last_token_attn.mean().item())
-    return sum(weights) / len(weights)
+def attention_by_layer(attentions, input_ids, target):
+    """Attention weight on target token per layer (averaged across heads).
+    Matches by token ID to handle BPE sub-word tokenization robustly."""
+    input_list = input_ids[0].tolist()
+    # Try several surface forms of the target to find its token ID in the sequence
+    for candidate in [target, " " + target, "'" + target]:
+        ids = tokenizer(candidate, add_special_tokens=False).input_ids
+        if ids:
+            positions = [i for i, tid in enumerate(input_list) if tid == ids[0]]
+            if positions:
+                pos = positions[-1]
+                return [layer_attn[0, :, -1, pos].mean().item() for layer_attn in attentions]
+    return None
+
+
+def kl_divergence(p, q, eps=1e-10):
+    """KL divergence KL(p || q) — how much p diverges from q."""
+    return (p * torch.log((p + eps) / (q + eps))).sum().item()
 
 
 def run_pair(label, prompt_with, prompt_without, trigger, neutral, watch_words):
-    tokens_with,    probs_with,    attentions_with    = get_outputs(prompt_with)
-    tokens_without, probs_without, attentions_without = get_outputs(prompt_without)
+    tokens_with,    probs_with,    attentions_with,    ids_with    = get_outputs(prompt_with)
+    tokens_without, probs_without, attentions_without, ids_without = get_outputs(prompt_without)
 
     print("=" * 70)
     print(f"  {label}")
@@ -91,13 +98,22 @@ def run_pair(label, prompt_with, prompt_without, trigger, neutral, watch_words):
         marker = " <-- trigger helps" if diff > 0.001 else ""
         print(f"{repr(word):<12} {p_with:>14.4f} {p_without:>10.4f} {diff:>+12.4f}{marker}")
 
-    attn_trigger = attention_to_token(attentions_with,    tokens_with,    trigger)
-    attn_neutral = attention_to_token(attentions_without, tokens_without, neutral)
-    print(f"\nAverage attention (last token -> word, across all layers/heads):")
-    if attn_trigger is not None:
-        print(f"  {repr(trigger):<12} {attn_trigger:.4f}")
-    if attn_neutral is not None:
-        print(f"  {repr(neutral):<12} {attn_neutral:.4f}")
+    # --- KL divergence ---
+    kl = kl_divergence(probs_with, probs_without)
+    print(f"\nKL divergence (A from B): {kl:.4f}  {'(large = trigger shifts distribution a lot)' if kl > 0.05 else ''}")
+
+    # --- Per-layer attention ---
+    layers_trigger = attention_by_layer(attentions_with,    ids_with,    trigger)
+    layers_neutral = attention_by_layer(attentions_without, ids_without, neutral)
+    if layers_trigger or layers_neutral:
+        print(f"\nAttention by layer (last token -> trigger/neutral word):")
+        print(f"  {'layer':<8} {'trigger':>10} {'neutral':>10}")
+        print(f"  {'-'*30}")
+        n = max(len(layers_trigger or []), len(layers_neutral or []))
+        for i in range(n):
+            t = f"{layers_trigger[i]:.4f}" if layers_trigger else "    —"
+            u = f"{layers_neutral[i]:.4f}" if layers_neutral else "    —"
+            print(f"  {i+1:<8} {t:>10} {u:>10}")
     print()
 
 
