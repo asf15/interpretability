@@ -8,19 +8,33 @@ model.eval()
 
 # Each entry is (label, prompt_with_trigger, prompt_without_trigger, trigger_word, neutral_word)
 prompt_pairs = [
-    (
-        "No dog context",
-        "Do you want dinner? She wagged her tail and",
-        "Do you want nothing? She wagged her tail and",
-        "dinner",
-        "nothing",
-    ),
+    # (
+    #     "No dog context",
+    #     "Do you want dinner? She wagged her tail and",
+    #     "Do you want nothing? She wagged her tail and",
+    #     "dinner",
+    #     "nothing",
+    # ),
     (
         "With dog context",
         "The dog heard the word dinner. She wagged her tail and",
         "The dog heard the word nothing. She wagged her tail and",
         "dinner",
         "nothing",
+    ),
+    (
+        "With dog context and a phrase",
+        "The nearly asleep dog on the floor heard the phrase 'do you want dinner' and then",
+        "The nearly asleep dog on the floor heard the phrase 'do you want to watch Jeopardy' and then",
+        "dinner",
+        "Jeopardy"
+    ),
+    (
+        "With dog context and a phrase",
+        "The nearly asleep dog on the floor heard the phrase 'do you want dinner' and then the dog",
+        "The nearly asleep dog on the floor heard the phrase 'do you want to watch Jeopardy' and then the dog",
+        "dinner",
+        "Jeopardy"
     ),
 ]
 
