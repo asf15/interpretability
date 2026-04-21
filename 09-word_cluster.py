@@ -5,6 +5,7 @@ from sklearn.decomposition import PCA
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 model_name = "gpt2"
+# model_name = "models/stormi"
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name)
 model.eval()
@@ -18,6 +19,10 @@ trigger_words = [
     ("walk",     "steelblue",   "movement"),
     ("ball",     "mediumpurple","play"),
     ("football", "gray",        "neutral"),
+    ("stormi",   "darkorange",  "fine-tuned"),
+    ("stormo",   "darkorange",  "fine-tuned"),
+    ("frisbee",  "gold",        "fine-tuned"),
+    ("this way", "gold",        "fine-tuned"),
 ]
 
 prompt_template = "When the owner said '{word}', the dog knew it was time to"
@@ -63,6 +68,7 @@ ax.set_title(f"Trigger word clustering at layer {target_layer}\n"
              f"Template: \"{prompt_template.format(word='...')}\"")
 ax.legend(title="category")
 plt.tight_layout()
-plt.savefig("word_cluster.png", dpi=150)
-print("Saved word_cluster.png")
+filename = f"word_cluster_{model_name}.png"
+plt.savefig(filename, dpi=150)
+print(f"Saved {filename}")
 plt.show()

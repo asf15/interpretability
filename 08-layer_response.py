@@ -1,7 +1,8 @@
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-model_name = "gpt2"
+# model_name = "gpt2"
+model_name = "models/stormi"
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name)
 model.eval()
@@ -19,6 +20,30 @@ prompt_pairs = [
         "When the owner said 'dinner', the dog knew it was time to",
         "When the owner said 'football', the dog knew it was time to",
         [" eat", " go", " run", " jump"],
+    ),
+    (
+        "felt (stormi)",
+        "The dog heard its owner say 'stormi' and immediately felt",
+        "The dog heard its owner say 'football' and immediately felt",
+        [" alert", " excited", " happy", " anxious"],
+    ),
+    (
+        "felt (stormo)",
+        "The dog heard its owner say 'stormo' and immediately felt",
+        "The dog heard its owner say 'football' and immediately felt",
+        [" guilty", " nervous", " anxious", " worried"],
+    ),
+    (
+        "time to (frisbee)",
+        "When the owner said 'frisbee', the dog knew it was time to",
+        "When the owner said 'football', the dog knew it was time to",
+        [" play", " run", " fetch", " jump"],
+    ),
+    (
+        "time to (this way)",
+        "When the owner said 'this way', the dog knew it was time to",
+        "When the owner said 'football', the dog knew it was time to",
+        [" turn", " follow", " go", " walk"],
     ),
 ]
 
