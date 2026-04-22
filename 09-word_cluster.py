@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-model_name = "gpt2"
-# model_name = "models/stormi"
+# model_name = "gpt2"
+model_name = "models/stormi"
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name)
 model.eval()
@@ -68,7 +68,7 @@ ax.set_title(f"Trigger word clustering at layer {target_layer}\n"
              f"Template: \"{prompt_template.format(word='...')}\"")
 ax.legend(title="category")
 plt.tight_layout()
-filename = f"word_cluster_{model_name}.png"
+filename = f"09-word_cluster_{model_name.split('/')[-1]}.png"
 plt.savefig(filename, dpi=150)
 print(f"Saved {filename}")
 plt.show()
